@@ -1,0 +1,204 @@
+// 定义 Protobuf 语法版本
+syntax = "proto3";
+
+// 包名，避免命名冲突
+package argus.core.protos;
+
+// 导入标准 Protobuf 类型
+import "google/protobuf/any.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto"; // For optional basic types if needed
+
+// --- 消息类型定义 (基于 Pydantic 模型) ---
+
+// BBox 辅助消息
+message BBox {
+  int32 x_min = 1;
+  int32 y_min = 2;
+  int32 x_max = 3;
+  int32 y_max = 4;
+}
+
+// ElementQuery 消息
+message ElementQuery {
+  // 注意：adapter_specific_id 类型为 bytes，由适配器自行序列化/反序列化
+  optional bytes adapter_specific_id = 1;
+  optional string framework_id = 2; // 框架生成的 ID (用于快照内引用)
+  optional string element_type = 3; // 对应 ElementType Literal/Enum
+  optional string name = 4;
+  optional string text_content_regex = 5; // 正则表达式匹配文本
+  optional string exact_text = 6; // 精确文本匹配
+  optional BBox bbox = 7;
+  optional string xpath = 8; // 如果适配器支持 XPath
+  optional string css_selector = 9; // 如果适配器支持 CSS Selector
+  optional string description = 10; // 用于模糊匹配或传递给 LMM
+  optional int32 index = 11; // (新增) 用于在多个匹配项中选择特定索引
+  // parent_query 递归定义比较复杂，暂时省略或用 ID 引用
+  // optional ElementQuery parent_query = 12;
+  optional string parent_framework_id_constraint = 13; // 通过父元素 ID 约束
+  float min_confidence = 14;
+  // find_all 由调用的 RPC 方法区分，这里不需要
+}
+
+// UIElement 消息
+message UIElement {
+  string framework_id = 1; // 框架内本次快照的唯一 ID
+  bytes adapter_specific_id = 2; // 适配器内部 ID (bytes)
+  string element_type = 3; // 标准化的元素类型字符串
+  optional string name = 4; // Accessibility 名称或标签
+  BBox bbox = 5;
+  optional string text_content = 6; // 元素内文本
+  map<string, google.protobuf.Value> state = 7; // 标准状态字典
+  optional string parent_framework_id = 8; // 父元素的 framework_id
+  repeated string children_framework_ids = 9; // 子元素的 framework_id 列表
+  float confidence = 10; // 感知置信度
+  map<string, google.protobuf.Value> adapter_metadata = 11; // 可选的适配器特定元数据
+}
+
+// UISnapshot 消息
+message UISnapshot {
+  string snapshot_id = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  map<string, google.protobuf.Value> app_context = 3; // 应用上下文
+  repeated UIElement elements = 4; // 快照中的所有 UI 元素
+  optional string focused_element_framework_id = 5; // 焦点元素的 framework_id
+  optional string raw_screenshot_path = 6; // 可选原始截图路径
+  optional bytes accessibility_tree_raw = 7; // 可选原始树结构 (bytes)
+}
+
+// ActionResult 消息
+message ActionResult {
+  bool success = 1;
+  optional string message = 2;
+  optional string error_type = 3; // 标准化错误类型字符串 (映射到异常类名)
+  optional google.protobuf.Struct details = 4; // 其他详细信息 (用 Struct 替代 Dict)
+}
+
+// --- 服务特定请求/响应消息 ---
+
+// PerceptionService Messages
+message GetUISnapshotRequest {
+  optional google.protobuf.Struct options = 1; // 对应 options: Dict
+}
+
+message FindElementResponse {
+  optional UIElement element = 1;
+}
+
+message FindElementsResponse {
+  repeated UIElement elements = 1;
+}
+
+message GetElementStateRequest {
+  bytes adapter_specific_id = 1;
+}
+
+message GetElementStateResponse {
+  map<string, google.protobuf.Value> state = 1;
+}
+
+message GetElementTextRequest {
+  bytes adapter_specific_id = 1;
+}
+
+message GetElementTextResponse {
+  optional string text = 1;
+}
+
+message GetFocusedElementRequest {
+  // No parameters needed
+}
+
+message GetFocusedElementResponse {
+  optional UIElement element = 1;
+}
+
+// ActionService Messages
+message ClickRequest {
+  bytes adapter_specific_id = 1;
+  optional google.protobuf.Struct options = 2; // e.g., {'button': 'left', 'click_type': 'double'}
+}
+
+message TypeTextRequest {
+  string text = 1;
+  optional bytes adapter_specific_id = 2;
+  optional google.protobuf.Struct options = 3; // e.g., {'clear_before_typing': True}
+}
+
+message ScrollRequest {
+  string direction = 1; // "up", "down", "left", "right"
+  int32 magnitude = 2;
+  optional bytes adapter_specific_id = 3;
+  optional google.protobuf.Struct options = 4;
+}
+
+message PressKeyRequest {
+  string key_combination = 1;
+  optional google.protobuf.Struct options = 2;
+}
+
+message Coordinates {
+    int32 x = 1;
+    int32 y = 2;
+}
+
+message DragAndDropRequest {
+  bytes source_adapter_specific_id = 1;
+  oneof target {
+    bytes target_adapter_specific_id = 2;
+    Coordinates target_coords = 3;
+  }
+  optional google.protobuf.Struct options = 4;
+}
+
+message ExecuteNativeCommandRequest {
+  string command_name = 1;
+  google.protobuf.Struct params = 2; // Use Struct for flexible parameters
+}
+
+// AdapterControlService Messages
+message InitializeRequest {
+    string adapter_name = 1; // Identify which adapter config to use
+    google.protobuf.Struct config = 2; // Adapter specific config
+}
+
+message InitializeResponse {
+    bool success = 1;
+    optional string message = 2;
+}
+
+message ShutdownRequest {
+    // No parameters needed
+}
+
+message ShutdownResponse {
+    bool success = 1;
+    optional string message = 2;
+}
+
+// --- 服务定义 ---
+
+service PerceptionService {
+  rpc GetUISnapshot(GetUISnapshotRequest) returns (UISnapshot);
+  rpc FindElement(ElementQuery) returns (FindElementResponse); // Query directly
+  rpc FindElements(ElementQuery) returns (FindElementsResponse); // Query directly
+  rpc GetElementState(GetElementStateRequest) returns (GetElementStateResponse);
+  rpc GetElementText(GetElementTextRequest) returns (GetElementTextResponse);
+  rpc GetFocusedElement(GetFocusedElementRequest) returns (GetFocusedElementResponse);
+}
+
+service ActionService {
+  rpc Click(ClickRequest) returns (ActionResult);
+  rpc TypeText(TypeTextRequest) returns (ActionResult);
+  rpc Scroll(ScrollRequest) returns (ActionResult);
+  rpc PressKey(PressKeyRequest) returns (ActionResult);
+  rpc DragAndDrop(DragAndDropRequest) returns (ActionResult);
+  rpc ExecuteNativeCommand(ExecuteNativeCommandRequest) returns (ActionResult);
+}
+
+service AdapterControlService {
+  // Potentially run by the adapter process itself
+  rpc Initialize(InitializeRequest) returns (InitializeResponse); // Maybe called by manager upon loading
+  rpc Shutdown(ShutdownRequest) returns (ShutdownResponse); // Request graceful shutdown
+}

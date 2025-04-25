@@ -1,0 +1,81 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "argus-pilot-system"
+version = "0.1.0"
+description = "一个模块化、可扩展的通用计算机控制框架。"
+readme = "README.md"
+requires-python = ">=3.10" # 与核心提示词保持一致
+license = { file = "LICENSE" } # 假设未来会有 LICENSE 文件
+keywords = ["automation", "control", "framework", "adapter", "grpc"]
+authors = [
+    { name = "OzBomboR", email = "your_email@example.com" }, # 请替换为您的邮箱
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License", # 假设使用 MIT
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+]
+
+# 项目依赖项 (根据需要添加)
+dependencies = [
+    "grpcio >= 1.60.0", # 请确认版本
+    "grpcio-tools >= 1.60.0", # 请确认版本
+    "protobuf >= 4.0.0", # 请确认版本
+    # "pydantic >= 2.0.0", # 如果数据结构需要
+    # 添加其他核心依赖...
+]
+
+[project.optional-dependencies]
+development = [
+    "pytest >= 7.0",
+    "pytest-mock >= 3.10",
+    "flake8 >= 6.0",
+    "black >= 23.0",
+    "isort >= 5.0",
+    "mypy >= 1.0",
+    # 添加其他开发依赖...
+]
+
+[project.urls]
+Homepage = "" # 项目主页 URL (例如 GitHub 仓库)
+Documentation = "" # 文档 URL
+Repository = "" # 代码仓库 URL
+"Bug Tracker" = "" # Bug 跟踪系统 URL
+
+# [project.scripts] # 如果需要命令行入口点
+# argus-cli = "argus.cli:main"
+
+# [project.entry-points."argus_adapters"] # 适配器入口点定义示例
+# mock_adapter = "adapters.mock:MockAdapterSet" # 假设适配器模块
+
+[tool.hatch.version]
+path = "core/__init__.py" # 可选：将版本号写入 __init__.py
+
+[tool.black]
+line-length = 88
+target-version = ['py310', 'py311', 'py312']
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.mypy]
+python_version = "3.10"
+warnings = true
+ignore_missing_imports = true # 暂时允许忽略缺失的导入，尤其是生成代码
+
+# [tool.pytest.ini_options] # Pytest 配置 (如果需要)
+# minversion = "6.0"
+# addopts = "-ra -q"
+# testpaths = [
+#     "tests",
+# ]
