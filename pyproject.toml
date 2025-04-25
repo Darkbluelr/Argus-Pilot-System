@@ -73,6 +73,20 @@ python_version = "3.10"
 warnings = true
 ignore_missing_imports = true # 暂时允许忽略缺失的导入，尤其是生成代码
 
+[tool.hatch.build.targets.wheel]
+# 明确指定要包含在构建中的 Python 包目录和模块文件
+# 对于根目录下的独立模块，可以直接指定文件名
+# 对于目录，hatch 会将其视为包
+packages = [
+    "core",
+    "utils",
+    "config",
+    "adapters",
+    "interfaces",
+]
+# 可以用 include 指定额外的文件或目录模式
+include = ["cli.py"]
+
 # [tool.pytest.ini_options] # Pytest 配置 (如果需要)
 # minversion = "6.0"
 # addopts = "-ra -q"
