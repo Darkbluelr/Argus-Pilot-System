@@ -51,8 +51,8 @@ Documentation = "" # 文档 URL
 Repository = "" # 代码仓库 URL
 "Bug Tracker" = "" # Bug 跟踪系统 URL
 
-# [project.scripts] # 如果需要命令行入口点
-# argus-cli = "argus.cli:main"
+[project.scripts] # 添加命令行入口点
+argus-cli = "cli:main"
 
 # [project.entry-points."argus_adapters"] # 适配器入口点定义示例
 # mock_adapter = "adapters.mock:MockAdapterSet" # 假设适配器模块
